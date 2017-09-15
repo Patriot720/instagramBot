@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 from PyQt5.QtCore import QObject, pyqtSignal
 import os.path
 import time
