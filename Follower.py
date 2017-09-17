@@ -26,10 +26,12 @@ class Follower(QObject):
         self.functions = [
             self.follow_subs_by_username,
             self.follow_subs_by_hashtag,
-            self.follow_by_hashtag
+            self.follow_by_hashtag,
+            self.removeFollowing
         ]
         self._isRunning = True
         self.following_ids = []
+        self.followers_ids = []
 
     def follow(self):
         try:
@@ -41,8 +43,35 @@ class Follower(QObject):
             self.end.emit("Неверный ник/тег")
         except HTTPError:
             self.end.emit("Слишком много запросов, придется подождать")
-        except:
-            self.end.emit("ОШИБКА ОШИБКА")
+
+    def removeFollowing(self, name):
+        self.getFollowing()
+        self.mid.emit('Скачал все подписки')
+        self._getFollowers()
+        self.mid.emit('Скачал всех подписчиков')
+        for user in self.following_ids:
+            if(user not in self.followers_ids):
+                self.api.friendships_destroy(user)
+                self.mid.emit("Удалил" + user)
+                print(user)
+                for i in range(SLEEP_TIME_MODULE):
+                    if(not self._isRunning):
+                        self.end.emit(STANDART_STOP_MESSAGE)
+                        return
+                    time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
+        self.end.emit("КОНЧИЛ")
+
+    def _getFollowers(self):
+        has_next_page = True
+        end_cursor = None
+        while(has_next_page):
+            followers = self.api.user_followers(
+                self.id,extract=False, end_cursor=end_cursor, count=1000)
+            end_cursor = followers['data']['user']['edge_followed_by']['page_info']['end_cursor']
+            has_next_page = followers['data']['user']['edge_followed_by']['page_info']['has_next_page']
+            follower_users = followers['data']['user']['edge_followed_by']['edges']
+            for user in follower_users:
+                self.followers_ids.append(user['node']['id'])
 
     def start(self):
         self._isRunning = True
@@ -55,7 +84,7 @@ class Follower(QObject):
         end_cursor = None
         while(has_next_page):
             following = self.api.user_following(
-                self.id,extract=False,end_cursor=end_cursor,count=1000)
+                self.id, extract=False, end_cursor=end_cursor, count=1000)
             end_cursor = following['data']['user']['edge_follow']['page_info']['end_cursor']
             has_next_page = following['data']['user']['edge_follow']['page_info']['has_next_page']
             following_users = following['data']['user']['edge_follow']['edges']
@@ -162,10 +191,4 @@ if __name__ == '__main__':
     em.login = "alarmavape@yandex.ru"
     em.password = "alarmattention"
     em.get_api()
-    em.getFollowing()
-    follower = {
-        'id': '2886391938'
-    }
-    print(follower['id'])
-    viable = em.is_viable(follower)
-    print('es')
+    em.removeFollowing()

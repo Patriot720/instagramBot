@@ -13,7 +13,8 @@ class UI(QMainWindow):
     label_types = [
         "Ник",
         "Хештег без #",
-        "Хештег без #"
+        "Хештег без #",
+        "Ничего"
     ]
     def __init__(self):
         super().__init__()
