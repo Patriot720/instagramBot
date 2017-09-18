@@ -8,7 +8,12 @@ import time
 import sys
 from Follower import Follower
 
-
+import os
+if os.name == "nt":  # if windows
+    import PyQt5
+    pyqt_plugins = os.path.join(os.path.dirname(PyQt5.__file__),
+                                "..", "..", "..", "Library", "plugins")
+    QApplication.addLibraryPath(pyqt_plugins)
 class UI(QMainWindow):
     label_types = [
         "Ник",
