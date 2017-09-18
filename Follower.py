@@ -15,8 +15,9 @@ class Follower(QObject):
     end = pyqtSignal(str)
     mid = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, client=Client):
         super().__init__()
+        self.client = client
         if(os.path.isfile("ignoreList.txt")):
             ignore = open("ignoreList.txt", 'r')
             self.ignore_list = ignore.read().splitlines()
@@ -96,7 +97,7 @@ class Follower(QObject):
 
     def get_api(self):
         try:
-            self.api = Client(
+            self.api = self.client(
                 auto_patch=True, authenticate=True,
                 username=self.login, password=self.password)
             self.id = self.api.authenticated_user_id
