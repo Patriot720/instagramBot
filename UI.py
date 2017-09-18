@@ -9,11 +9,9 @@ import sys
 from Follower import Follower
 
 import os
-if os.name == "nt":  # if windows
-    import PyQt5
-    pyqt_plugins = os.path.join(os.path.dirname(PyQt5.__file__),
-                                "..", "..", "..", "Library", "plugins")
-    QApplication.addLibraryPath(pyqt_plugins)
+import PyQt5
+pyqt = os.path.dirname(PyQt5.__file__)
+QApplication.addLibraryPath(os.path.join(pyqt, "plugins"))
 class UI(QMainWindow):
     label_types = [
         "Ник",
