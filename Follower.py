@@ -87,7 +87,7 @@ class Follower(QObject):
             if self._is_viable(follower):
                 self.api.friendships_create(follower)
                 self.mid.emit(
-                    "Подписался на " + follower + "\nПолное имя: " + follower)
+                    "Подписался на " + str(follower))
                 self._sleep()
         self.end.emit('Подписка закончена')  # TAA SHAA
 

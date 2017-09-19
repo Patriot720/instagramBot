@@ -7,9 +7,6 @@ import random
 from MockClasses import *
 
 
-
-
-
 class TestFollowers(unittest.TestCase):
     def setUp(self):
         self.api = APIMock()
@@ -29,6 +26,12 @@ class TestFollowers(unittest.TestCase):
         ids = self.subsManager.get('following', self.id)
         # then
         self.assertEqual(len(ids), 2000)
+
+    def test_should_get_fake_tag_feed_users(self):
+        # when
+        ids = self.subsManager.tag_feed("hashtag")
+        # then
+        self.assertEqual(len(ids), 1000)
 
 
 if __name__ == "__main__":

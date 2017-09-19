@@ -1,6 +1,10 @@
 import random
+
+
 def rand(max_range=10000):
     return random.randint(0, max_range)
+
+
 class APIMock:
     ids = []
     authenticated_user_id = 228
@@ -42,20 +46,21 @@ class APIMock:
     def friendships_destroy(self, id):
         return self.ids.append(id)
 
-    def tag_feed(hastag, **kwargs):
+    def tag_feed(self, hastag, **kwargs):
+        end_cursor = kwargs['end_cursor']
         obj = {
             'tag': {
                 'media': {
                     'page_info': {
-                        'has_next_page': 0,
-                        'end_cursor': 'kappa'
+                        'has_next_page': False if end_cursor else True,
+                        'end_cursor': 1
                     },
-                    'nodes': {
-                        'owner': {
-                            'id': 228
-                        }
-
-                    }
+                    'nodes': []
                 }
             }
         }
+        for i in range(1000):
+            obj['tag']['media']['nodes'].append({
+                'owner': {'id': rand()}
+            })
+        return obj

@@ -19,7 +19,7 @@ class SubsManager():
             users = edge['edges']
 
             for user in users:
-                ids.append(user['node'])
+                ids.append(user['node']['id'])
         return ids
 
     def _apiGet(self, typeStr, user_id, extract=False, end_cursor=None, count=1000):
@@ -36,8 +36,13 @@ class SubsManager():
     def friendships_create(self, user):
         self.api.friendships_create(user)
 
-    def tag_feed(self, hashtag, count=1000):
-        return
+    def tag_feed(self, hashtag, end_cursor=None, count=1000):
+        end_cursor = None
+        cnt = count
+        has_next_page = True
+        feed = self.api.tag_feed(
+            hashtag, extract=False, end_cursor=end_cursor, count=cnt)
+        
 
     def get_user_id(self, username):
         user = self.api.user_info2(username)
