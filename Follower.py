@@ -25,20 +25,21 @@ class Follower(QObject):
         else:
             self.ignore_list = []
         self.functions = [
-            self.follow_subs_by_username,
-            self.follow_subs_by_hashtag,
-            self.follow_by_hashtag,
+            self._follow_subs_by_username,
+            self._follow_subs_by_hashtag,
+            self._follow_by_hashtag,
             self.removeFollowing
         ]
         self._isRunning = True
-        self.following_ids = []
-        self.followers_ids = []
+        self.ids = {
+            'followers': [],
+            'following': []
+        }
 
     def follow(self):
         try:
             self.functions[self.index](self.text)
         except ClientError as e:
-            print("ERR", e)
             self.end.emit("Неверный ник/тег")
         except ValueError:
             self.end.emit("Неверный ник/тег")
@@ -46,51 +47,62 @@ class Follower(QObject):
             self.end.emit("Слишком много запросов, придется подождать")
 
     def removeFollowing(self, name):
-        self.getFollowing()
+        self._get('following')
         self.mid.emit('Скачал все подписки')
-        self._getFollowers()
+        self._get('followers')
+        self.ids['followers'] = []
         self.mid.emit('Скачал всех подписчиков')
-        for user in self.following_ids:
-            if(user not in self.followers_ids):
+        for user in self.ids['following']:
+            if(user not in self.ids['followers']):
                 self.api.friendships_destroy(user)
-                self.mid.emit("Удалил" + user)
-                print(user)
-                for i in range(SLEEP_TIME_MODULE):
-                    if(not self._isRunning):
-                        self.end.emit(STANDART_STOP_MESSAGE)
-                        return
-                    time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
-        self.end.emit("КОНЧИЛ")
+                self.mid.emit("Удалил" + str(user))
+                self._sleep()
+        self.end.emit("Завершено")
 
-    def _getFollowers(self):
+    def setSleepFunction(self, func):
+        self.sleep = func
+
+    def _sleep(self):
+        for i in range(SLEEP_TIME_MODULE):
+            if(not self._isRunning):
+                self.end.emit(STANDART_STOP_MESSAGE)
+                return
+            time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
+
+    def _get(self, typeStr):
+        self.ids[typeStr] = []
+        if typeStr == "followers":
+            edge_type = 'edge_followed_by'
+
+        elif typeStr == "following":
+            edge_type = 'edge_follow'
+        else:
+            return
         has_next_page = True
         end_cursor = None
         while(has_next_page):
-            followers = self.api.user_followers(
-                self.id,extract=False, end_cursor=end_cursor, count=1000)
-            end_cursor = followers['data']['user']['edge_followed_by']['page_info']['end_cursor']
-            has_next_page = followers['data']['user']['edge_followed_by']['page_info']['has_next_page']
-            follower_users = followers['data']['user']['edge_followed_by']['edges']
-            for user in follower_users:
-                self.followers_ids.append(user['node']['id'])
+            following = self._apiGet(typeStr,
+                                     self.id, extract=False, end_cursor=end_cursor, count=1000)
+            edge = following['data']['user'][edge_type]
+            end_cursor = edge['page_info']['end_cursor']
+            has_next_page = edge['page_info']['has_next_page']
+            users = edge['edges']
+            for user in users:
+                self.ids[typeStr].append(user['node']['id'])
+
+    def _apiGet(self, typeStr, id, extract=False, end_cursor=None, count=1000):
+        if typeStr == 'followers':
+            return self.api.user_followers(
+                self.id, extract=False, end_cursor=end_cursor, count=1000)
+        elif typeStr == 'following':
+            return self.api.user_following(
+                self.id, extract=False, end_cursor=end_cursor, count=1000)
 
     def start(self):
         self._isRunning = True
         self.get_api()
-        self.getFollowing()
+        self._get('following')
         self.follow()
-
-    def getFollowing(self):
-        has_next_page = True
-        end_cursor = None
-        while(has_next_page):
-            following = self.api.user_following(
-                self.id, extract=False, end_cursor=end_cursor, count=1000)
-            end_cursor = following['data']['user']['edge_follow']['page_info']['end_cursor']
-            has_next_page = following['data']['user']['edge_follow']['page_info']['has_next_page']
-            following_users = following['data']['user']['edge_follow']['edges']
-            for user in following_users:
-                self.following_ids.append(user['node']['id'])
 
     def stop(self):
         self._isRunning = False
@@ -109,7 +121,7 @@ class Follower(QObject):
             self.end.emit("Слишком много запросов, придется подождать")
             return
 
-    def follow_subs_by_username(self, username):
+    def _follow_subs_by_username(self, username):
         max_id = None
         has_next_page = 1
         while(has_next_page):
@@ -122,18 +134,14 @@ class Follower(QObject):
             has_next_page = len(followers)
 
             for follower in followers:
-                if self.is_viable(follower):
+                if self._is_viable(follower):
                     self.api.friendships_create(follower['id'])
                     self.mid.emit(
                         "Подписался на " + follower['username'] + "\nПолное имя: " + follower['full_name'])
-                    for i in range(SLEEP_TIME_MODULE):
-                        if(not self._isRunning):
-                            self.end.emit(STANDART_STOP_MESSAGE)
-                            return
-                        time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
+                    self._sleep()
         self.end.emit('Подписка закончена')  # TAA SHAA
 
-    def follow_subs_by_hashtag(self, hashtag):
+    def _follow_subs_by_hashtag(self, hashtag):
         max_id = None
         has_next_page = True
         while(has_next_page):
@@ -150,21 +158,17 @@ class Follower(QObject):
                     followers = self.api.user_followers(
                         user_id, max_id=users_max_id, count=1000)
                     for follower in followers:
-                        if self.is_viable(follower):
+                        if self._is_viable(follower):
                             self.api.friendships_create(follower['id'])
                             self.mid.emit(
                                 "Подписался на " + follower['username'] + "Полное имя: " + follower['full_name'])
-                            for i in range(SLEEP_TIME_MODULE):
-                                if(not self._isRunning):
-                                    self.end.emit(STANDART_STOP_MESSAGE)
-                                    return
-                                time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
+                            self._sleep()
         self.end.emit('Подписка закончена')
 
-    def is_viable(self, follower):
-        return (follower['id'] not in self.ignore_list and follower['id'] not in self.following_ids)
+    def _is_viable(self, follower):
+        return (follower['id'] not in self.ignore_list and follower['id'] not in self.ids['followers'])
 
-    def follow_by_hashtag(self, hashtag):
+    def _follow_by_hashtag(self, hashtag):
         max_id = None
         has_next_page = True
         while(has_next_page):
@@ -178,9 +182,5 @@ class Follower(QObject):
                 self.api.friendships_create(follower)
                 self.mid.emit(
                     "Подписался на " + follower)
-                for i in range(SLEEP_TIME_MODULE):
-                    if(not self._isRunning):
-                        self.end.emit(STANDART_STOP_MESSAGE)
-                        return
-                    time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
+                self._sleep()
         self.end.emit("Подписка закончена")
