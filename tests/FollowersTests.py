@@ -2,6 +2,7 @@
 import unittest
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Follower import Follower
 from SubsManager import SubsManager
 from MockClasses import *

@@ -19,7 +19,7 @@ class SubsManager():
             users = edge['edges']
 
             for user in users:
-                ids.append(user['node']['id'])
+                ids.append(user['node'])
         return ids
 
     def _apiGet(self, typeStr, user_id, extract=False, end_cursor=None, count=1000):
