@@ -40,7 +40,7 @@ class Follower(QObject):
         try:
             self.functions[self.index](self.text)
         except ClientError as e:
-            self.end.emit("Неверный ник/тег")
+            self.end.emit("Instagram блочит или неверный ник/тег")
         except ValueError:
             self.end.emit("Неверный ник/тег")
         except HTTPError:
