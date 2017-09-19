@@ -42,7 +42,6 @@ class SubsManager():
         has_next_page = True
         feed = self.api.tag_feed(
             hashtag, extract=False, end_cursor=end_cursor, count=cnt)
-        
 
     def get_user_id(self, username):
         user = self.api.user_info2(username)
