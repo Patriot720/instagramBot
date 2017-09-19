@@ -47,7 +47,8 @@ class APIMock:
         return self.ids.append(id)
 
     def tag_feed(self, hastag, **kwargs):
-        end_cursor = kwargs['end_cursor']
+        end_cursor = kwargs['max_id']
+        count = kwargs['count']
         obj = {
             'tag': {
                 'media': {
@@ -59,7 +60,7 @@ class APIMock:
                 }
             }
         }
-        for i in range(1000):
+        for i in range(count):
             obj['tag']['media']['nodes'].append({
                 'owner': {'id': rand()}
             })

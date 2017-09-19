@@ -29,9 +29,9 @@ class TestFollowers(unittest.TestCase):
 
     def test_should_get_fake_tag_feed_users(self):
         # when
-        ids = self.subsManager.tag_feed("hashtag")
+        ids = self.subsManager.get_user_ids_from_tag_feed("hashtag")
         # then
-        self.assertEqual(len(ids), 1000)
+        self.assertEqual(len(ids), 2000)
 
 
 if __name__ == "__main__":
