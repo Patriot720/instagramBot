@@ -15,15 +15,11 @@ class Follower(QObject):
     end = pyqtSignal(str)
     mid = pyqtSignal(str)
 
-    def __init__(self, client=Client):
+    def __init__(self, api):
         super().__init__()
-        self.client = client
-        if(os.path.isfile("ignoreList.txt")):
-            ignore = open("ignoreList.txt", 'r')
-            self.ignore_list = ignore.read().splitlines()
-            ignore.close()
-        else:
-            self.ignore_list = []
+        self.api = api
+        self.id = api.authenticated_user_id
+        self._create_ignore_list()
         self.functions = [
             self._follow_subs_by_username,
             self._follow_subs_by_hashtag,
@@ -31,10 +27,15 @@ class Follower(QObject):
             self.removeFollowing
         ]
         self._isRunning = True
-        self.ids = {
-            'followers': [],
-            'following': []
-        }
+        self.followers = [] # TODO change to sublsidfjlManger
+
+    def _create_ignore_list(self):
+        if(os.path.isfile("ignoreList.txt")):
+            ignore = open("ignoreList.txt", 'r')
+            self.ignore_list = ignore.read().splitlines()
+            ignore.close()
+        else:
+            self.ignore_list = []
 
     def follow(self):
         try:
@@ -47,20 +48,20 @@ class Follower(QObject):
             self.end.emit("Слишком много запросов, придется подождать")
 
     def removeFollowing(self, name):
-        self._get('following')
+        followings = self.api.get('following', self.id)
         self.mid.emit('Скачал все подписки')
-        self._get('followers')
-        self.ids['followers'] = []
+        followers = self.api.get('followers', self.id)
+        followers = []
         self.mid.emit('Скачал всех подписчиков')
-        for user in self.ids['following']:
-            if(user not in self.ids['followers']):
+        for user in followings:
+            if(user not in followers):
                 self.api.friendships_destroy(user)
                 self.mid.emit("Удалил" + str(user))
                 self._sleep()
         self.end.emit("Завершено")
 
     def setSleepFunction(self, func):
-        self.sleep = func
+        self._sleep = func
 
     def _sleep(self):
         for i in range(SLEEP_TIME_MODULE):
@@ -69,76 +70,25 @@ class Follower(QObject):
                 return
             time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
 
-    def _get(self, typeStr):
-        self.ids[typeStr] = []
-        if typeStr == "followers":
-            edge_type = 'edge_followed_by'
-
-        elif typeStr == "following":
-            edge_type = 'edge_follow'
-        else:
-            return
-        has_next_page = True
-        end_cursor = None
-        while(has_next_page):
-            following = self._apiGet(typeStr,
-                                     self.id, extract=False, end_cursor=end_cursor, count=1000)
-            edge = following['data']['user'][edge_type]
-            end_cursor = edge['page_info']['end_cursor']
-            has_next_page = edge['page_info']['has_next_page']
-            users = edge['edges']
-            for user in users:
-                self.ids[typeStr].append(user['node']['id'])
-
-    def _apiGet(self, typeStr, id, extract=False, end_cursor=None, count=1000):
-        if typeStr == 'followers':
-            return self.api.user_followers(
-                self.id, extract=False, end_cursor=end_cursor, count=1000)
-        elif typeStr == 'following':
-            return self.api.user_following(
-                self.id, extract=False, end_cursor=end_cursor, count=1000)
-
     def start(self):
         self._isRunning = True
-        self.get_api()
         self._get('following')
         self.follow()
 
     def stop(self):
         self._isRunning = False
 
-    def get_api(self):
-        try:
-            self.api = self.client(
-                auto_patch=True, authenticate=True,
-                username=self.login, password=self.password)
-            self.id = self.api.authenticated_user_id
-            self.api_end.emit("Успешный вход в Инстаграмм")
-        except ClientLoginError:
-            self.end.emit("Неверный логин/пароль")
-            return
-        except (HTTPError, ClientError):
-            self.end.emit("Слишком много запросов, придется подождать")
-            return
-
     def _follow_subs_by_username(self, username):
         max_id = None
         has_next_page = 1
-        while(has_next_page):
-            user = self.api.user_info2(username)
-            followers = self.api.user_followers(
-                user['id'], max_id=max_id, count=1000)
-            if(not len(followers)):
-                return
-            max_id = followers[len(followers) - 1]['id']
-            has_next_page = len(followers)
-
-            for follower in followers:
-                if self._is_viable(follower):
-                    self.api.friendships_create(follower['id'])
-                    self.mid.emit(
-                        "Подписался на " + follower['username'] + "\nПолное имя: " + follower['full_name'])
-                    self._sleep()
+        user_id = self.api.get_user_id(username)
+        followers = self.api.get("followers", user_id)
+        for follower in followers:
+            if self._is_viable(follower):
+                self.api.friendships_create(follower)
+                self.mid.emit(
+                    "Подписался на " + follower + "\nПолное имя: " + follower)
+                self._sleep()
         self.end.emit('Подписка закончена')  # TAA SHAA
 
     def _follow_subs_by_hashtag(self, hashtag):
@@ -165,8 +115,8 @@ class Follower(QObject):
                             self._sleep()
         self.end.emit('Подписка закончена')
 
-    def _is_viable(self, follower):
-        return (follower['id'] not in self.ignore_list and follower['id'] not in self.ids['followers'])
+    def _is_viable(self, user_id):
+        return (user_id not in self.ignore_list and user_id not in self.followers)
 
     def _follow_by_hashtag(self, hashtag):
         max_id = None
