@@ -12,6 +12,6 @@
   + [Курс который советует Github](https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github)
   
   Чтобы помочь проекту:
-  1. Создайте свой "fork" проекта
+  1. Создайте свой "fork" ветки "test_driving"
   2. 
   
