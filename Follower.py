@@ -184,12 +184,3 @@ class Follower(QObject):
                         return
                     time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
         self.end.emit("Подписка закончена")
-
-
-if __name__ == '__main__':
-    print('kappa')
-    em = Follower()
-    em.login = "alarmavape@yandex.ru"
-    em.password = "alarmattention"
-    em.get_api()
-    em.removeFollowing()
