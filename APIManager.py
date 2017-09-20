@@ -1,4 +1,4 @@
-class SubsManager():
+class APIManager():
     def __init__(self, api):
         self.api = api
         self.authenticated_user_id = self.api.authenticated_user_id

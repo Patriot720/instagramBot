@@ -2,7 +2,7 @@ import unittest
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from SubsManager import SubsManager
+from APIManager import APIManager
 import random
 from MockClasses import *
 
@@ -10,7 +10,7 @@ from MockClasses import *
 class TestFollowers(unittest.TestCase):
     def setUp(self):
         self.api = APIMock()
-        subsManager = SubsManager(self.api)
+        subsManager = APIManager(self.api)
         self.subsManager = subsManager
         self.id = self.api.authenticated_user_id
 

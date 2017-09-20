@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Follower import Follower
-from SubsManager import SubsManager
+from APIManager import APIManager
 from MockClasses import *
 import random
 
@@ -15,7 +15,7 @@ def sleepfunc():
 
 class TestFollowers(unittest.TestCase):
     def setUp(self):
-        self.api = SubsManager(APIMock())
+        self.api = APIManager(APIMock())
         follower = Follower(self.api)
         self.follower = follower
         self.follower.set_sleep_function(sleepfunc)
@@ -31,7 +31,7 @@ class TestFollowers(unittest.TestCase):
         # THEN
         self.assertTrue(len(self.follower.api.api.ids))
 
-    def test_should_test_viable_id(self):
+    def test_should_test_if_id_is_viable(self):
         # WHEN
         viable = self.follower._is_viable(self.id)
         self.assertTrue(viable)
@@ -40,19 +40,19 @@ class TestFollowers(unittest.TestCase):
         # WHEN
         self.follower._follow_subs_by_username("username")
         # THEN
-        self.assertTrue(len(self.follower.api.api.ids))
+        self.assertEqual(len(self.follower.api.api.ids), 2000)
 
     def test_should_follow_subs_by_hastag(self):
         # when
         self.follower._follow_subs_by_hashtag("kappa")
         # then
-        self.assertTrue(len(self.follower.api.api.ids))
+        self.assertEqual(len(self.follower.api.api.ids), 4000)
 
     def test_should_follow_by_hashtag(self):
         # when
         self.follower._follow_by_hashtag("kappa")
         # then
-        self.assertTrue(len(self.follower.api.api.ids))
+        self.assertEqual(len(self.follower.api.api.ids), 2000)
 
 
 if __name__ == '__main__':
