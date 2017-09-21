@@ -94,8 +94,7 @@ class Follower(QObject):
         self.end.emit('Подписка закончена')
 
     def _is_viable(self, user_id):
-        #return (user_id not in self.ignore_list and user_id not in self.followers)
-        return True
+        return (user_id not in self.ignore_list and user_id not in self.followers)
 
     def _subscribe_on_all(self, followers):
         for follower in followers:

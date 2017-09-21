@@ -20,6 +20,7 @@ class TestFollowers(unittest.TestCase):
         self.follower = follower
         self.follower.set_sleep_function(sleepfunc)
         self.id = self.api.authenticated_user_id
+        self.follower.followers = [1]
 
     def test_should_have_followers_on_init(self):
         # THEN
