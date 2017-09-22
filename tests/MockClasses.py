@@ -10,6 +10,13 @@ def rand(max_range=10000):
     return random.randint(0, max_range)
 
 
+def mockClient(**kwargs):
+    if(kwargs['username'] != "empty" and kwargs['password'] != "empty"):
+        return APIMock()
+    else:
+        raise ClientError("Wrong shiet")
+
+
 class APIMock:
     authenticated_user_id = 228
     isMock = True

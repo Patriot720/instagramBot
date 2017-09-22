@@ -6,16 +6,8 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtTest import QTest
 from PyQt5.QtCore import Qt
 from Login import Login
+from MockClasses import mockClient
 app = QApplication(sys.argv)
-from instagram_web_api import ClientError
-from MockClasses import APIMock
-
-
-def mockClient(**kwargs):
-    if(kwargs['username'] and kwargs['password']):
-        return APIMock()
-    else:
-        raise ClientError("Wrong shiet")
 
 
 class TestLogin(unittest.TestCase):

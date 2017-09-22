@@ -19,14 +19,17 @@ class Login(QDialog):
         self.show()
 
     def click(self):
-        login = self.login.text()
-        password = self.password.text()
+        login = self.login.text() or "empty"
+        password = self.password.text() or "empty"
         try:
             api = self.client(auto_patch=True, authenticate=True,
                               username=login, password=password)
         except ClientError:
-            self.failed_login = LoginFail()
+            self.failed_login = LoginFail(LoginFail.WRONG_CREDENTIALS_MSG)
             return
+        except:
+            self.failed_login = LoginFail(LoginFail.UNKNOWN_ERROR)
+
         apiManager = APIManager(api)
         follower = Follower(apiManager)
         self.ui = UI(follower)
@@ -34,10 +37,11 @@ class Login(QDialog):
 
 class LoginFail(Login):
     WRONG_CREDENTIALS_MSG = "Неверный логин и пароль"
+    UNKNOWN_ERROR = "Неизвестная ошибка, пожалуйста свяжитесь с разработчиком"
 
-    def __init__(self):
+    def __init__(self, message):
         super().__init__()
-        self.error_label.setText(self.WRONG_CREDENTIALS_MSG)
+        self.error_label.setText(message)
 
 
 if __name__ == '__main__':
