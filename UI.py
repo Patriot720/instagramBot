@@ -16,10 +16,11 @@ class UI(QMainWindow):
         "Хештег без #",
         "Ничего"
     ]
-    def __init__(self):
+
+    def __init__(self, follower):
         super().__init__()
         uic.loadUi('main.ui', self)
-        self.follower = Follower()
+        self.follower = follower
         self.thread = QThread()
         self.follower.moveToThread(self.thread)
         self.thread.started.connect(self.follower.start)
