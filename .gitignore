@@ -16,6 +16,8 @@ $RECYCLE.BIN/
 # TXT files
 *.txt
 login.txt
+settings
+lp
 # Windows shortcuts
 *.lnk
 

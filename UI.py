@@ -7,7 +7,7 @@ import os.path
 import time
 import sys
 from Follower import Follower
-
+from io import StringIO
 
 class UI(QMainWindow):
     label_types = [
@@ -113,7 +113,7 @@ def excepthook(excType, excValue, tracebackobj):
     versionInfo = "0.0.1"
     timeString = time.strftime("%Y-%m-%d, %H:%M:%S")
 
-    tbinfofile = cStringIO.StringIO()
+    tbinfofile = StringIO()
     traceback.print_tb(tracebackobj, None, tbinfofile)
     tbinfofile.seek(0)
     tbinfo = tbinfofile.read()

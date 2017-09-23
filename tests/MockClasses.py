@@ -11,10 +11,18 @@ def rand(max_range=10000):
 
 
 def mockClient(**kwargs):
-    if(kwargs['username'] != "empty" and kwargs['password'] != "empty"):
-        return APIMock()
+    if(kwargs['settings'] or (kwargs['username'] != "empty" and kwargs['password'] != "empty")):
+        api = APIMock()
+        if(kwargs["on_login"]):
+            kwargs["on_login"](api)
+        return api
     else:
         raise ClientError("Wrong shiet")
+
+
+class Wut:
+    def __init__(self):
+        self.kappa = "DKJFdklf"
 
 
 class APIMock:
@@ -23,6 +31,7 @@ class APIMock:
 
     def __init__(self):
         self.ids = []
+        self.settings = "%%"
 
     def user_info2(self, username):
         return {'id': rand()}
