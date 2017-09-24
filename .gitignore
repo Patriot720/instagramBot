@@ -50,4 +50,5 @@ Network Trash Folder
 Temporary Items
 build
 dist
+__pycache__
 .apdisk

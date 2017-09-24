@@ -33,18 +33,19 @@ class Login(QDialog):
     def __init__(self, Client=Client):
         super().__init__()
         uic.loadUi('login.ui', self)
-        self.buttonBox.accepted.connect(self.click)
+        self.buttonBox.accepted.connect(self.try_to_log_in)
         self.client = Client
-        if(os.path.exists(self.LOGIN_PATH)):
-            self.set_cached_lp()
-            self.click()
-            return
         if(os.path.exists(self.SETTINGS_PATH)):
-            self.click()
+            self.try_to_log_in()
             return
+        if(os.path.exists(self.LOGIN_PATH)):
+            self.use_cached_lp()
+            self.try_to_log_in()
+            return
+
         self.show()
 
-    def click(self):
+    def try_to_log_in(self):
         login = self.login.text() or "empty"
         password = self.password.text() or "empty"
         self.log_in(
@@ -67,6 +68,10 @@ class Login(QDialog):
                         on_login=lambda x: self.onlogin_callback(x))
             return
         self.save_lp(login, password)
+        self.create_main_window(api)
+        return api
+
+    def create_main_window(self, api):
         apiManager = APIManager(api)
         follower = Follower(apiManager)
         self.ui = UI(follower)
@@ -79,14 +84,13 @@ class Login(QDialog):
         return cached_settings
 
     def save_lp(self, login, password):
-        lp = open(self.LOGIN_PATH, "w")
-        string = login + "\n" + password
-        lp.write(string)
-        lp.close()
+        with open(self.LOGIN_PATH, "w") as lp:
+            string = login + "\n" + password
+            lp.write(string)
 
-    def set_cached_lp(self):
-        lp = open(self.LOGIN_PATH, "r")
-        vm = lp.read().splitlines()
+    def use_cached_lp(self):
+        with open(self.LOGIN_PATH, "r") as lp:
+            vm = lp.read().splitlines()
         self.login.setText(vm[0])
         self.password.setText(vm[1])
 
