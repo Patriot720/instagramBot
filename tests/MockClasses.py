@@ -1,9 +1,10 @@
 import random
-from instagram_web_api import Client, ClientCompatPatch, ClientError, ClientLoginError
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from instagram_web_api import Client, ClientCompatPatch, ClientError, ClientLoginError
 from APIManager import APIManager
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 def rand(max_range=10000):
@@ -20,9 +21,40 @@ def mockClient(**kwargs):
         raise ClientError("Wrong shiet")
 
 
-class Wut:
+class mockFollower(QObject):
+    api_end = pyqtSignal(str)
+    end = pyqtSignal(str)
+    mid = pyqtSignal(str)
+    SAMPLE_MSG = "SAMPLE_MSG"
+
     def __init__(self):
-        self.kappa = "DKJFdklf"
+        super().__init__()
+        self.funcs = [
+            self.func1,
+            self.func2
+        ]
+
+    def start(self):
+        self.started = True
+        self.funcs[self.index]()
+        self.end.emit(self.SAMPLE_MSG)
+        return
+
+    def func1(self):
+        self.func1_launched = True
+
+    def func2(self):
+        self.func2_launched = True
+
+    def set_index(self, index):
+        self.index = index
+
+    def set_name(self, name):
+        self.name = name
+
+    def stop(self):
+        self.stopped = True
+        return
 
 
 class APIMock:

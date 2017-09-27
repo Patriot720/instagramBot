@@ -18,9 +18,9 @@ class TestFollowers(unittest.TestCase):
         self.api = APIManager(APIMock())
         follower = Follower(self.api)
         self.follower = follower
-        self.follower.set_sleep_function(sleepfunc)
+        self.follower._sleep = sleepfunc
         self.id = self.api.authenticated_user_id
-        self.follower.followers = [1]
+        self.follower.followers = ["w"]
 
     def test_should_have_followers_on_init(self):
         # THEN
@@ -41,19 +41,19 @@ class TestFollowers(unittest.TestCase):
         # WHEN
         self.follower._follow_subs_by_username("username")
         # THEN
-        self.assertEqual(len(self.follower.api.api.ids), 2000)
+        self.assertEqual(len(self.follower.api.api.ids), 1000)
 
     def test_should_follow_subs_by_hastag(self):
         # when
         self.follower._follow_subs_by_hashtag("kappa")
         # then
-        self.assertEqual(len(self.follower.api.api.ids), 4000)
+        self.assertEqual(len(self.follower.api.api.ids), 1000)
 
     def test_should_follow_by_hashtag(self):
         # when
         self.follower._follow_by_hashtag("kappa")
         # then
-        self.assertEqual(len(self.follower.api.api.ids), 2000)
+        self.assertEqual(len(self.follower.api.api.ids), 1000)
 
 
 if __name__ == '__main__':

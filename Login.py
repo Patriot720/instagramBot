@@ -67,7 +67,8 @@ class Login(QDialog):
             self.log_in(login, password,
                         on_login=lambda x: self.onlogin_callback(x))
             return
-        self.save_lp(login, password)
+        if not settings:
+            self.save_lp(login, password)
         self.create_main_window(api)
         return api
 

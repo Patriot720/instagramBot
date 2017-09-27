@@ -9,6 +9,7 @@ import sys
 from Follower import Follower
 from io import StringIO
 
+
 class UI(QMainWindow):
     label_types = [
         "Ник",
@@ -24,61 +25,28 @@ class UI(QMainWindow):
         self.thread = QThread()
         self.follower.moveToThread(self.thread)
         self.thread.started.connect(self.follower.start)
-        self.follower.api_end.connect(self.on_api_end)
         self.follower.end.connect(self.on_end)
         self.follower.mid.connect(self.on_mid)
         self.type_chooser.currentIndexChanged.connect(self.on_index_change)
         self.start_btn.clicked.connect(self.on_start)
-        lp = self.getLPFromCache()
-        if(lp):
-            self.login.setText(lp[0])
-            self.password.setText(lp[1])
         self.show()
-
-    def getLPFromCache(self):
-        vm = []
-        if(os.path.isfile("login.txt")):
-            f = open("login.txt", "r")
-            vm = f.read().splitlines()
-            f.close()
-            if(len(vm) != 2):
-                vm = []
-        return vm
 
     def on_index_change(self, index):
         self.type_label.setText(self.label_types[index])
 
-    def on_api_end(self, msg):
-        self.progress_box.append(msg)
-
     def launch(self):
-        self.follower.login = self.login.text()
-        self.follower.password = self.password.text()
-        self.follower.index = self.type_chooser.currentIndex()
-        self.follower.text = self.choose_box.text()
+        self.follower.set_index(self.type_chooser.currentIndex())
+        self.follower.set_name(self.choose_box.text())
         self.thread.start()
 
     def on_end(self, msg):
         self.progress_box.append(msg)
-        self.enableBtn()
+        self.start_btn.setText("Старт")
         self.start_btn.setChecked(False)
         self.stop_thread()
 
-    def enableBtn(self):
-        self.start_btn.setText("Старт")
-
-    def disableBtn(self):
-        self.start_btn.setText("Стоп")
-
     def on_mid(self, msg):
         self.progress_box.append(msg)
-
-    def saveLP(self):
-        login = self.login.text()
-        password = self.password.text()
-        f = open("login.txt", 'w')
-        f.write(login + "\n" + password)
-        f.close()
 
     def stop_thread(self):
         self.follower.stop()
@@ -87,11 +55,10 @@ class UI(QMainWindow):
 
     def on_start(self, checked):
         if(checked):
-            self.saveLP()
+            self.start_btn.setText("Стоп")
             self.launch()
-            self.disableBtn()
         else:
-            self.enableBtn()
+            self.start_btn.setText("Старт")
             self.stop_thread()
 
 
@@ -133,8 +100,3 @@ def excepthook(excType, excValue, tracebackobj):
 
 
 sys.excepthook = excepthook
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = UI()
-    sys.exit(app.exec_())

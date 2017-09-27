@@ -51,13 +51,12 @@ class TestLogin(unittest.TestCase):
         self.assertTrue(os.path.isfile(self.login.SETTINGS_PATH))
 
     def test_should_login_if_settings_exists(self):
-        f2 = open(Login.SETTINGS_PATH, "w")
-        f2.write('"%%"')
-        f2.close()
+        with open(Login.SETTINGS_PATH, "w") as f:
+            f.write('"%%"')
         self.login = Login(mockClient)
         self.assertTrue(hasattr(self.login, "ui"))
 
-    def test_should_login_if_login_exists(self):
+    def test_should_login_if_credentials_exists(self):
         with open(Login.LOGIN_PATH, "w") as f:
             f.write("l\np")
         self.login = Login(mockClient)

@@ -39,8 +39,11 @@ class Follower(QObject):
     def stop(self):
         self._isRunning = False
 
-    def set_sleep_function(self, func):
-        self._sleep = func
+    def set_index(self, index):
+        self.index = index
+
+    def set_name(self, name):
+        self.name = name
 
     def _remove_following(self, name):
         followings = self.api.get('following', self.id)
@@ -51,7 +54,8 @@ class Follower(QObject):
             if(user not in followers):
                 self.api.friendships_destroy(user)
                 self.mid.emit("Удалил" + str(user))
-                self._sleep()
+                if self._sleep():  # TODO REFACTOR THIS
+                    return
         self.end.emit(self.SUCCESS_END_MESSAGE)
 
     def _create_ignore_list(self):
@@ -64,7 +68,7 @@ class Follower(QObject):
 
     def _follow(self):
         try:
-            self.functions[self.index](self.text)
+            self.functions[self.index](self.name)
         except ClientError as e:
             self.end.emit(self.CLIENTERROR_MESSAGE)
         except ValueError:
@@ -72,11 +76,10 @@ class Follower(QObject):
         except HTTPError:
             self.end.emit(self.HTTPERROR_MESSAGE)
 
-    def _sleep(self):
+    def _sleep(self):  # TODO FIX SLEEP FUNCTION SO IT STOPS SUBSCRIBING
         for i in range(self.SLEEP_TIME_MODULE):
             if(not self._isRunning):
-                self.end.emit(self.SUCCESS_END_MESSAGE)
-                return
+                return True
             time.sleep(self.SLEEP_TIME / self.SLEEP_TIME_MODULE)
 
     def _follow_subs_by_username(self, username):
@@ -90,7 +93,8 @@ class Follower(QObject):
             hashtag, count=self.SUBS_BY_HASTAG_COUNT)
         for user_id in user_ids:
             followers = self.api.get("followers", user_id)
-            self._subscribe_on_all(followers)
+            if self._subscribe_on_all(followers):  # TODO REFACTOR THIS
+                return
         self.end.emit('Подписка закончена')
 
     def _is_viable(self, user_id):
@@ -100,7 +104,8 @@ class Follower(QObject):
         for follower in followers:
             if self._is_viable(follower):
                 self._subscribe(follower)
-                self._sleep()
+                if(self._sleep()):  # TODO REFACTOR THIS
+                    return True
 
     def _subscribe(self, user_id):
         self.api.friendships_create(user_id)
@@ -110,6 +115,6 @@ class Follower(QObject):
         end_cursor = None
         has_next_page = True
         followers = self.api.get_user_ids_from_tag_feed(
-            hashtag, end_cursor=end_cursor)
+            hashtag)
         self._subscribe_on_all(followers)
         self.end.emit(self.SUCCESS_END_MESSAGE)

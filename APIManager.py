@@ -3,14 +3,14 @@ class APIManager():
         self.api = api
         self.authenticated_user_id = self.api.authenticated_user_id
 
-    def get(self, typeStr, user_id):
+    def get(self, typeStr, user_id, count=1000):
         ids = []
         edge_type = self._select_edge(typeStr)
         if(not edge_type):
             return
         has_next_page = True
         end_cursor = None
-        while(has_next_page):
+        while(has_next_page and len(ids) < count):
             following = self._api_get(typeStr,
                                       user_id, extract=False, end_cursor=end_cursor, count=1000)
             edge = following['data']['user'][edge_type]
@@ -47,7 +47,7 @@ class APIManager():
         max_id = None
         count = count
         has_next_page = True
-        while(has_next_page):
+        while(has_next_page and len(ids) < count):
             res = self.api.tag_feed(hashtag, max_id=max_id, count=count)
             media = res['tag']['media']
             has_next_page = media['page_info']['has_next_page']
