@@ -89,8 +89,8 @@ class Follower(QObject):
         self.end.emit(self.SUCCESS_END_MESSAGE)  # TAA SHAA
 
     def _follow_subs_by_hashtag(self, hashtag):
-        user_ids = self.api.get_user_ids_from_tag_feed(
-            hashtag, count=self.SUBS_BY_HASTAG_COUNT)
+        user_ids = self.api.get("tag_feed",
+                                hashtag, count=self.SUBS_BY_HASTAG_COUNT)
         for user_id in user_ids:
             followers = self.api.get("followers", user_id)
             if self._subscribe_on_all(followers):  # TODO REFACTOR THIS
@@ -114,7 +114,7 @@ class Follower(QObject):
     def _follow_by_hashtag(self, hashtag):
         end_cursor = None
         has_next_page = True
-        followers = self.api.get_user_ids_from_tag_feed(
-            hashtag)
+        followers = self.api.get("tag_feed",
+                                 hashtag)
         self._subscribe_on_all(followers)
         self.end.emit(self.SUCCESS_END_MESSAGE)

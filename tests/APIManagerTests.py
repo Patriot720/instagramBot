@@ -19,19 +19,19 @@ class TestFollowers(unittest.TestCase):
         # when
         ids = self.subsManager.get('followers', self.id)
         # then
-        self.assertEqual(len(ids), 2000)
+        self.assertEqual(len(ids), 1000)
 
     def test_should_get_fake_followings(self):
         # when
         ids = self.subsManager.get('following', self.id)
         # then
-        self.assertEqual(len(ids), 2000)
+        self.assertEqual(len(ids), 1000)
 
     def test_should_get_fake_tag_feed_users(self):
         # when
-        ids = self.subsManager.get_user_ids_from_tag_feed("hashtag")
+        ids = self.subsManager.get("tag_feed","hashtag")
         # then
-        self.assertEqual(len(ids), 2000)
+        self.assertEqual(len(ids), 1000)
 
 
 
