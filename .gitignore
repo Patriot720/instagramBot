@@ -16,6 +16,8 @@ $RECYCLE.BIN/
 # TXT files
 *.txt
 login.txt
+settings
+lp
 # Windows shortcuts
 *.lnk
 
@@ -48,4 +50,5 @@ Network Trash Folder
 Temporary Items
 build
 dist
+__pycache__
 .apdisk

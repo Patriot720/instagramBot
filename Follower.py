@@ -5,191 +5,116 @@ import time
 from urllib.error import (HTTPError)
 from instagram_web_api import Client, ClientCompatPatch, ClientError, ClientLoginError
 
-SLEEP_TIME = 60
-SLEEP_TIME_MODULE = 60
-STANDART_STOP_MESSAGE = "Остановлено"
-
 
 class Follower(QObject):
     api_end = pyqtSignal(str)
     end = pyqtSignal(str)
     mid = pyqtSignal(str)
+    SUBS_BY_HASTAG_COUNT = 1
+    SUCCESS_END_MESSAGE = "Успешно завершено"
+    HTTPERROR_MESSAGE = "Слишком много запросов, придется подождать"
+    VALUEERROR_MESSAGE = "Неверный ник/тег"
+    CLIENTERROR_MESSAGE = "Instagram блочит или неверный ник/тег"
+    SLEEP_TIME = 60
+    SLEEP_TIME_MODULE = 60
 
-    def __init__(self, client=Client):
+    def __init__(self, api):
         super().__init__()
-        self.client = client
+        self.api = api
+        self.id = api.authenticated_user_id
+        self._create_ignore_list()
+        self.functions = [
+            self._follow_subs_by_username,
+            self._follow_subs_by_hashtag,
+            self._follow_by_hashtag,
+            self._remove_following
+        ]
+        self._isRunning = True
+        self.followers = self.api.get("followers", self.id)
+
+    def start(self):
+        self._isRunning = True
+        self._follow()
+
+    def stop(self):
+        self._isRunning = False
+
+    def set_index(self, index):
+        self.index = index
+
+    def set_name(self, name):
+        self.name = name
+
+    def _remove_following(self, name):
+        followings = self.api.get('following', self.id)
+        self.mid.emit('Скачал все подписки')
+        followers = self.api.get('followers', self.id)
+        self.mid.emit('Скачал всех подписчиков')
+        for user in followings:
+            if(user not in followers):
+                self.api.friendships_destroy(user)
+                self.mid.emit("Удалил" + str(user))
+                if self._sleep():  # TODO REFACTOR THIS
+                    return
+        self.end.emit(self.SUCCESS_END_MESSAGE)
+
+    def _create_ignore_list(self):
         if(os.path.isfile("ignoreList.txt")):
             ignore = open("ignoreList.txt", 'r')
             self.ignore_list = ignore.read().splitlines()
             ignore.close()
         else:
             self.ignore_list = []
-        self.functions = [
-            self.follow_subs_by_username,
-            self.follow_subs_by_hashtag,
-            self.follow_by_hashtag,
-            self.removeFollowing
-        ]
-        self._isRunning = True
-        self.following_ids = []
-        self.followers_ids = []
 
-    def follow(self):
+    def _follow(self):
         try:
-            self.functions[self.index](self.text)
+            self.functions[self.index](self.name)
         except ClientError as e:
-            print("ERR", e)
-            self.end.emit("Неверный ник/тег")
+            self.end.emit(self.CLIENTERROR_MESSAGE)
         except ValueError:
-            self.end.emit("Неверный ник/тег")
+            self.end.emit(self.VALUEERROR_MESSAGE)
         except HTTPError:
-            self.end.emit("Слишком много запросов, придется подождать")
+            self.end.emit(self.HTTPERROR_MESSAGE)
 
-    def removeFollowing(self, name):
-        self.getFollowing()
-        self.mid.emit('Скачал все подписки')
-        self._getFollowers()
-        self.mid.emit('Скачал всех подписчиков')
-        for user in self.following_ids:
-            if(user not in self.followers_ids):
-                self.api.friendships_destroy(user)
-                self.mid.emit("Удалил" + user)
-                print(user)
-                for i in range(SLEEP_TIME_MODULE):
-                    if(not self._isRunning):
-                        self.end.emit(STANDART_STOP_MESSAGE)
-                        return
-                    time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
-        self.end.emit("КОНЧИЛ")
+    def _sleep(self):  # TODO FIX SLEEP FUNCTION SO IT STOPS SUBSCRIBING
+        for i in range(self.SLEEP_TIME_MODULE):
+            if(not self._isRunning):
+                return True
+            time.sleep(self.SLEEP_TIME / self.SLEEP_TIME_MODULE)
 
-    def _getFollowers(self):
-        has_next_page = True
-        end_cursor = None
-        while(has_next_page):
-            followers = self.api.user_followers(
-                self.id,extract=False, end_cursor=end_cursor, count=1000)
-            end_cursor = followers['data']['user']['edge_followed_by']['page_info']['end_cursor']
-            has_next_page = followers['data']['user']['edge_followed_by']['page_info']['has_next_page']
-            follower_users = followers['data']['user']['edge_followed_by']['edges']
-            for user in follower_users:
-                self.followers_ids.append(user['node']['id'])
+    def _follow_subs_by_username(self, username):
+        user_id = self.api.get_user_id(username)
+        followers = self.api.get("followers", user_id)
+        self._subscribe_on_all(followers)
+        self.end.emit(self.SUCCESS_END_MESSAGE)  # TAA SHAA
 
-    def start(self):
-        self._isRunning = True
-        self.get_api()
-        self.getFollowing()
-        self.follow()
-
-    def getFollowing(self):
-        has_next_page = True
-        end_cursor = None
-        while(has_next_page):
-            following = self.api.user_following(
-                self.id, extract=False, end_cursor=end_cursor, count=1000)
-            end_cursor = following['data']['user']['edge_follow']['page_info']['end_cursor']
-            has_next_page = following['data']['user']['edge_follow']['page_info']['has_next_page']
-            following_users = following['data']['user']['edge_follow']['edges']
-            for user in following_users:
-                self.following_ids.append(user['node']['id'])
-
-    def stop(self):
-        self._isRunning = False
-
-    def get_api(self):
-        try:
-            self.api = self.client(
-                auto_patch=True, authenticate=True,
-                username=self.login, password=self.password)
-            self.id = self.api.authenticated_user_id
-            self.api_end.emit("Успешный вход в Инстаграмм")
-        except ClientLoginError:
-            self.end.emit("Неверный логин/пароль")
-            return
-        except (HTTPError, ClientError):
-            self.end.emit("Слишком много запросов, придется подождать")
-            return
-
-    def follow_subs_by_username(self, username):
-        max_id = None
-        has_next_page = 1
-        while(has_next_page):
-            user = self.api.user_info2(username)
-            followers = self.api.user_followers(
-                user['id'], max_id=max_id, count=1000)
-            if(not len(followers)):
+    def _follow_subs_by_hashtag(self, hashtag):
+        user_ids = self.api.get("tag_feed",
+                                hashtag, count=self.SUBS_BY_HASTAG_COUNT)
+        for user_id in user_ids:
+            followers = self.api.get("followers", user_id)
+            if self._subscribe_on_all(followers):  # TODO REFACTOR THIS
                 return
-            max_id = followers[len(followers) - 1]['id']
-            has_next_page = len(followers)
-
-            for follower in followers:
-                if self.is_viable(follower):
-                    self.api.friendships_create(follower['id'])
-                    self.mid.emit(
-                        "Подписался на " + follower['username'] + "\nПолное имя: " + follower['full_name'])
-                    for i in range(SLEEP_TIME_MODULE):
-                        if(not self._isRunning):
-                            self.end.emit(STANDART_STOP_MESSAGE)
-                            return
-                        time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
-        self.end.emit('Подписка закончена')  # TAA SHAA
-
-    def follow_subs_by_hashtag(self, hashtag):
-        max_id = None
-        has_next_page = True
-        while(has_next_page):
-            res = self.api.tag_feed(hashtag, max_id=max_id)
-            media = res['tag']['media']
-            has_next_page = media['page_info']['has_next_page']
-            max_id = media['page_info']['end_cursor']
-            items = media['nodes']
-            for item in items:
-                users_max_id = 0
-                users_has_next_page = 1
-                user_id = item['owner']['id']
-                while(users_has_next_page):
-                    followers = self.api.user_followers(
-                        user_id, max_id=users_max_id, count=1000)
-                    for follower in followers:
-                        if self.is_viable(follower):
-                            self.api.friendships_create(follower['id'])
-                            self.mid.emit(
-                                "Подписался на " + follower['username'] + "Полное имя: " + follower['full_name'])
-                            for i in range(SLEEP_TIME_MODULE):
-                                if(not self._isRunning):
-                                    self.end.emit(STANDART_STOP_MESSAGE)
-                                    return
-                                time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
         self.end.emit('Подписка закончена')
 
-    def is_viable(self, follower):
-        return (follower['id'] not in self.ignore_list and follower['id'] not in self.following_ids)
+    def _is_viable(self, user_id):
+        return (user_id not in self.ignore_list and user_id not in self.followers)
 
-    def follow_by_hashtag(self, hashtag):
-        max_id = None
+    def _subscribe_on_all(self, followers):
+        for follower in followers:
+            if self._is_viable(follower):
+                self._subscribe(follower)
+                if(self._sleep()):  # TODO REFACTOR THIS
+                    return True
+
+    def _subscribe(self, user_id):
+        self.api.friendships_create(user_id)
+        self.mid.emit("Подписался на " + str(user_id))
+
+    def _follow_by_hashtag(self, hashtag):
+        end_cursor = None
         has_next_page = True
-        while(has_next_page):
-            res = self.api.tag_feed(hashtag, max_id=max_id)
-            media = res['tag']['media']
-            has_next_page = media['page_info']['has_next_page']
-            max_id = media['page_info']['end_cursor']
-            items = media['nodes']
-            for item in items:
-                follower = item['owner']['id']
-                self.api.friendships_create(follower)
-                self.mid.emit(
-                    "Подписался на " + follower)
-                for i in range(SLEEP_TIME_MODULE):
-                    if(not self._isRunning):
-                        self.end.emit(STANDART_STOP_MESSAGE)
-                        return
-                    time.sleep(SLEEP_TIME / SLEEP_TIME_MODULE)
-        self.end.emit("Подписка закончена")
-
-
-if __name__ == '__main__':
-    print('kappa')
-    em = Follower()
-    em.login = "alarmavape@yandex.ru"
-    em.password = "alarmattention"
-    em.get_api()
-    em.removeFollowing()
+        followers = self.api.get("tag_feed",
+                                 hashtag)
+        self._subscribe_on_all(followers)
+        self.end.emit(self.SUCCESS_END_MESSAGE)
