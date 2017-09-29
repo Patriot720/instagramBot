@@ -1,6 +1,7 @@
   language: python
   python:
     - 3.6
-    - nightly
+  install:
+    pip install pyqt5
   script:
     - python ./tests/loginTests.py
