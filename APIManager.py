@@ -44,7 +44,7 @@ class APIManager():
     def friendships_create(self, user):
         self.api.friendships_create(user)
 
-    def get(self, typeStr, user_id, count=1000):
+    def get(self, typeStr, user_id, count=5000):
         ids = []
         has_next_page = True
         count = count

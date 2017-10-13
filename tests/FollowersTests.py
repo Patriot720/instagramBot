@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 import unittest
 import os
 import sys
@@ -41,19 +40,19 @@ class TestFollowers(unittest.TestCase):
         # WHEN
         self.follower._follow_subs_by_username("username")
         # THEN
-        self.assertEqual(len(self.follower.api.api.ids), 1000)
+        self.assertEqual(len(self.follower.api.api.ids), 5000)
 
     def test_should_follow_subs_by_hastag(self):
         # when
         self.follower._follow_subs_by_hashtag("kappa")
         # then
-        self.assertEqual(len(self.follower.api.api.ids), 1000)
+        self.assertEqual(len(self.follower.api.api.ids), 5000)
 
     def test_should_follow_by_hashtag(self):
         # when
         self.follower._follow_by_hashtag("kappa")
         # then
-        self.assertEqual(len(self.follower.api.api.ids), 1000)
+        self.assertEqual(len(self.follower.api.api.ids), 5000)
 
 
 if __name__ == '__main__':
